@@ -1,0 +1,247 @@
+---
+title: "The tidy text format"
+output: html_notebook
+---
+
+Reference book: 
+<https://www.tidytextmining.com/>
+
+
+Make sure you have installed the following packages: `tidyverse`, `tidytext`, `gutenbergr`, `scales`, and `stopwords`.
+
+
+Recall that our definition of tidy data is:
+
+- Each variable is a column
+
+- Each observation is a row
+
+- Each type of observational unit is a table
+
+We thus define the tidy text format as being a table with **one-token-per-row**. A _token_ is a meaningful unit of text, such as a word, that we are interested in using for analysis, and _tokenization_ is the process of splitting text into tokens. For tidy text mining, the token that is stored in each row is most often a single word, but can also be an n-gram, sentence, or paragraph. In the `tidytext` package, we provide functionality to tokenize by commonly used units of text like these and convert to a one-term-per-row format.
+
+The framework above is worth contrasting with the ways text is often stored in text mining approaches:
+
+- String: Text can, of course, be stored as strings, i.e., character vectors, within R, and often text data is first read into memory in this form.
+
+- Corpus: These types of objects typically contain raw strings annotated with additional metadata and details.
+
+- Document-term matrix: This is a sparse matrix describing a collection (i.e., a _corpus_) of documents with one row for each document and one column for each term. The value in the matrix is typically word count or tf-idf (term frequency-inverse document frequency).
+
+
+
+
+### The `unnest_tokens()` function
+
+
+
+```{r}
+queen <- c("Buddy, you are a boy, make a big noise",
+"Playing in the street, gonna be a big man someday",
+"You got mud on your face, you big disgrace",
+"Kicking your can all over the place, singing"
+)
+```
+
+Print it
+
+```{r}
+queen
+```
+
+This is a typical character vector that we might want to analyze. In order to turn it into a tidy text dataset, we first need to put it into a data frame.
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+```{r}
+text_df <- 
+
+text_df
+```
+
+(a _tibble_  has a convenient print method, will not convert strings to factors, and does not use row names)
+
+
+```{r, message=FALSE, warning=FALSE}
+library(tidytext)
+```
+
+
+```{r}
+
+```
+
+The two basic arguments to `unnest_tokens()` used here are column names. First we have the output column name that will be created as the text is unnested into it (`word`, in this case), and then the input column that the text comes from (`text`, in this case). Remember that `text_df` above has a column called `text` that contains the data of interest.
+
+![](https://github.com/reisanar/figs/raw/master/unnest_token.png)
+
+
+
+
+### The `gutenbergr` package
+
+```{r, message=FALSE, warning=FALSE}
+library(gutenbergr)
+```
+
+
+The `gutenbergr` package provides access to the public domain works from the [Project Gutenberg](https://www.gutenberg.org/) collection. The package includes tools both for downloading books (stripping out the unhelpful header/footer information), and a complete dataset of Project Gutenberg metadata that can be used to find works of interest. In this book, we will mostly use the function `gutenberg_download()` that downloads one or more works from Project Gutenberg by `ID`, but you can also use other functions to explore metadata, pair Gutenberg ID with title, author, language, etc., or gather information about authors.
+
+A common task in text mining is to look at **word frequencies**. We can do this intuitively and smoothly using tidy data principles. 
+
+In the following example we look at some science fiction and fantasy novels by H.G. Wells, who lived in the late 19th and early 20th centuries. Let us get ["The Time Machine"](https://www.gutenberg.org/ebooks/35), ["The War of the Worlds"](https://www.gutenberg.org/ebooks/36), ["The Invisible Man"](https://www.gutenberg.org/ebooks/5230), and ["The Island of Doctor Moreau"](https://www.gutenberg.org/ebooks/159). We can access these works using `gutenberg_download()` and the Project Gutenberg ID numbers for each novel.
+
+```{r}
+hgwells <- gutenberg_download(c(35, 36, 5230, 159))
+```
+
+Use `unnest_tokens()` from `tidytext` and `anti_join(x, y)` from `dplyr` (return all rows from `x` where there are not matching values in `y`, keeping just columns from `x`)
+
+
+```{r}
+tidy_hgwells <- 
+  
+```
+
+`anti_join(x, y)` drops all observations in `x` that have a match in `y`. Learn more about it [here](https://r4ds.had.co.nz/relational-data.html#filtering-joins)
+
+
+
+
+Print the first entries of the tidy dataframe `tidy_hgwells`
+
+```{r}
+head(tidy_hgwells)
+```
+
+
+
+Let us check: what are the most common words in these novels of H.G. Wells?
+
+```{r}
+
+```
+
+We now use tools from `tidyr` to _reshape_ the dataframe in the form we need it for visualization:
+
+```{r}
+freq_hgwells <- 
+  
+```
+
+
+Again, examine the new object
+
+```{r}
+head(freq_hgwells)
+```
+
+
+We use `str_extract()` here because the UTF-8 encoded texts from Project Gutenberg have some examples of words with underscores around them to indicate emphasis (like italics). The tokenizer treated these as words, but we do not want to count "_any_" separately from "any".
+
+Let us perform an analysis comparing the proportion (number of times a word was used) of words in the different books we are studying by H.G. Wells
+
+```{r}
+# transformations
+
+```
+
+```{r}
+wells_freq <- 
+  
+  
+```
+
+
+
+
+```{r}
+colnames(wells_freq)
+```
+
+
+```{r}
+# library(scales)
+
+# expect a warning about rows with missing values being removed
+
+# let us consider two of the books when compared with "The Time Machine"
+wells_freq %>% 
+  filter(book %in% c("The War of the Worlds", "The Invisible Man")) %>% 
+  ggplot(aes(x = proportion, 
+             y = `The Time Machine`, 
+             color = abs(`The Time Machine` - proportion) )) + 
+  geom_abline(color = "gray40", lty = 2) + 
+  geom_jitter(alpha = 0.1, size = 2.5, width = 0.3, height = 0.3) +
+  geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
+  scale_x_log10(labels = scales::percent_format()) +
+  scale_y_log10(labels = scales::percent_format()) +
+  scale_color_gradient(limits = c(0, 0.001), 
+                       low = "darkslategray4", 
+                       high = "gray75") +
+  facet_wrap(~book, ncol = 2) +
+  theme_minimal() +
+  theme(legend.position="none") +
+  labs(y = "The Time Machine", x = NULL)
+```
+
+
+### Stop-words ?
+
+Use the `stopwords()`function to find a list of common stop-words in different languages
+
+```{r}
+# below we print a random sample of all the ones included
+stopwords::stopwords(language = "english") %>% 
+  sample(10)
+```
+
+```{r}
+# below we print a random sample of all the ones included
+stopwords::stopwords(language = "spanish") %>% 
+  sample(10)
+```
+
+```{r}
+# below we print a random sample of all the ones included
+stopwords::stopwords(language = "french") %>% 
+  sample(10)
+```
+
+```{r}
+# below we print a random sample of all the ones included
+stopwords::stopwords(language = "portuguese") %>% 
+  sample(10)
+```
+
+
+```{r}
+# languages available
+stopwords::stopwords_getlanguages(source = "snowball" )
+```
+
+```{r}
+# languages available
+stopwords::stopwords_getlanguages(source = "snowball" )
+```
+
+```{r}
+# possible sources
+stopwords::stopwords_getsources()
+```
+
+```{r}
+# possible languages available in source
+stopwords::stopwords_getlanguages(source = "stopwords-iso")
+```
+
+
+```{r}
+# japanese stop words
+stopwords::stopwords(language = "ja", source = "stopwords-iso") %>% 
+  sample(10)
+```
+
+  

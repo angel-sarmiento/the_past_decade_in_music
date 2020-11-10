@@ -1,0 +1,343 @@
+---
+title: "Spotify Project"
+author: "Angel Sarmiento"
+date: "4/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, comment = NA, message = FALSE, warning = FALSE, fig.align = "center")
+```
+
+```{r Spotify Setup, include=FALSE}
+library(spotifyr)
+
+
+Sys.setenv(SPOTIFY_CLIENT_ID = 'f9afa83524e0430da85d4f55c15b21a1')
+Sys.setenv(SPOTIFY_CLIENT_SECRET = '5a7c8acf482b4ad0888f7425a90add4d')
+
+access_token <- get_spotify_authorization_code()
+```
+
+# loading libraries
+```{r Library Import, include=FALSE}
+# Tidy data wrangling
+library(tidyverse)
+library(purrr)
+
+#machine learning and plotting
+library(caret)
+library(dendextend)
+
+#time series
+library(lubridate)
+library(tsibble)
+
+#tag dataset
+library(lastfmR)
+
+#Pretty stuff
+library(circlize)
+library(wesanderson)
+pal <- wes_palette("Moonrise3", 31, type = "continuous")
+# library(highcharter)
+# library(scales)
+# Setting the seed for reproducability 
+set.seed(5543)
+```
+
+
+```{r Pulling the playlist}
+playlist_id <- "0NdonfZ87AajuaMPaOwXp9"
+
+# "51IpWbcq8OfFTZa1Ac5A2Z"
+playlist <- get_playlist(playlist_id)
+
+play_tracks_df <- get_playlist_tracks(playlist_id = playlist_id)
+
+#getting the list of the best album names for pulling info
+album_names <- as.vector(play_tracks_df$track.album.name)
+album_ids <- as.vector(play_tracks_df$track.album.id)
+```
+
+# Wrangling
+
+```{r Album Batches}
+#making a dataframe with the data from all of the albums 
+
+#this works much faster!
+full_album_df <- map_df(album_ids, get_albums)
+```
+
+```{r Track batches}
+#getting the album tracks of each album 
+full_tracks_df <- map_df(album_ids, get_album_tracks)
+```
+
+```{r Track Features}
+#getting the track features and appending them to the existing dataframe.
+track_feats <- map_df(full_tracks_df$id, get_track_audio_features)
+```
+
+
+```{r All tracks df}
+#dataframe with all of the tracks
+full_df <- cbind(full_tracks_df, track_feats)
+
+full_df <- subset(full_df, select=which(!duplicated(names(full_df)))) 
+```
+
+
+```{r Only Run Once}
+# ONLY RUN ONCE
+
+#unnesting the artist's names
+artists <- unnest(full_df, cols = c("artists"), names_repair = "universal")
+artists <- artists %>% select(c(3, 7:33))
+full_df <- artists
+colnames(full_df)[1] <- "artist.name"
+colnames(full_df)[9] <- "track.name"
+
+#Removing unanted columns
+rem_col <- c(3, 5, 6, 8, 10, 12, 13, 14, 26, 27)
+
+full_df[rem_col] <- NULL
+full_df <- full_df[!duplicated(full_df["track.name"]),]
+
+#unnesting the album artists names 
+albums.artists <- unnest(full_album_df, cols = c("artists"), names_repair = "universal")
+colnames(albums.artists)[4] <- "artist.name"
+colnames(albums.artists)[15] <- "album.name"
+
+#More unnesting to make joining easier
+albums.artists <- unnest(albums.artists, cols = c("tracks.items"), names_repair = "unique")
+# changing the name of the column with track names
+colnames(albums.artists)[33] <- "track.name"
+
+
+
+albums <- albums.artists %>% select(c("album.name", "popularity", "release_date", "genres", "artist.name", "track.name"))
+
+```
+
+
+
+
+```{r Creating the pre-final dataframe}
+# Inner join and removal of duplicates for final dataset
+full_dataset <- inner_join(full_df, albums, by = c("artist.name", "track.name"))
+```
+
+
+
+```{r Attempting to get Genre Tags for dataset}
+# tags <- map_df(as.vector(full_dataset$artist.name), get_tags); beepr::beep("coin")
+# 
+# write_csv(tags, "tags.csv")
+tags <- read_csv("tags.csv")
+```
+
+
+
+
+```{r}
+tags <- tags %>% 
+  filter(tag_freq == 100)
+
+colnames(tags)[1] <- "artist.name"
+
+full_dataset <- left_join(full_dataset, tags, by = "artist.name")
+full_dataset <- full_dataset[!duplicated(full_dataset["track.name"]),]
+
+write_csv(full_dataset, "spotify_full_100_10s.csv")
+```
+
+# Which genres have the most joyful music
+
+```{r Joyplot of the best albums}
+library(ggjoy)
+
+joyful <- full_dataset %>% 
+  filter(popularity >= 65) %>% 
+  arrange(-valence)
+
+
+ggplot(joyful, aes(x = valence, y = reorder(album.name, valence), colour = tag) ) + 
+    geom_joy() + 
+    ylab("Album") +
+    xlab("Relative Joyfulness (Valence)") +
+    ggtitle("Joyplot of album joy distributions", subtitle = "Based on valence pulled from Spotify's Web API with spotifyr")
+```
+
+# Do sadder songs have more words? 
+
+```{r Sadness Joyplot of the best albums, out.height="75%", out.width="75%"}
+# A plot with sad albums. To see if sadder songs tend to have more words 
+sadful <- full_dataset %>% 
+  filter(popularity >= 65) %>% 
+  arrange(speechiness)
+
+ggplot(sadful, aes(x = valence, y = reorder(album.name, speechiness), colour = tag)) +
+  geom_joy()+
+  ylab("Album") + 
+  xlab("Relative Joy (Lower is more sad)") +
+  ggtitle("Joyplot with Descending Speechiness")
+  
+```
+
+# Linear Model
+
+Are certain Genre's more sad than others? Can we see this with regression? 
+
+```{r}
+corr_pal <- wes_palette("Zissou1", 10, type = "continuous")
+
+library(corrplot)
+corr_set <- full_dataset %>% select_if(is.numeric) %>% 
+  select(-c("tag_freq"))
+
+corrs <- cor(corr_set)
+corrplot(corrs, method = "color", tl.col = "black", col = corr_pal)
+```
+\begin{center}
+Correlation Plot of the Relevant Variables
+\end{center}
+
+It does not seem that there is sufficient multicollinearity to negate the typical linear model assumption.
+
+```{r Estimating Joy with predictors}
+#going to add interaction terms with an explanation 
+joy_model <- train(valence ~ danceability + energy * loudness * acousticness + speechiness + 
+                     tempo + instrumentalness + liveness + key,
+                   data = full_dataset,
+                   method = "lm")
+
+summary(joy_model$finalModel)
+```
+
+
+It loos like danceability, energy, acousticness, and instrumentalness are significant predictors of the joyfulness/sadness of a song. Since the coefficient of instrumentalness is negative, it can be said that a song which has more instrumentalness is typically a sadder song according to the model. Unfortunately these predictors only explain 33% of the variance in valence. 
+
+# What is the time trend in songs?
+
+```{r}
+data_ts <- full_dataset %>% 
+  mutate(YearMonth = yearweek(as.character(full_dataset$release_date)))
+
+
+ggplot(data_ts, aes(x = YearMonth, y = valence)) +
+  geom_point(aes(col = tag)) +
+  ylab("Joyfulness") + 
+  xlab("Date") +
+  geom_smooth(method = "loess", col = "black")
+
+
+```
+
+## What about the time trend in Albums?
+
+```{r}
+data_ts <- full_dataset %>% 
+  mutate(YearMonth = yearweek(as.character(full_dataset$release_date)))
+
+data_ts_albums <- data_ts %>% 
+  bind_cols(full_dataset %>% select(album.name)) %>%
+  filter(!grepl('Deluxe', album.name)) %>% 
+  group_by(album.name, tag) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE) %>% 
+  ungroup() %>%
+  column_to_rownames("album.name") %>%
+  as.data.frame()
+
+month <- full_dataset %>% 
+  mutate(YearWeek = yearweek(as.character(full_dataset$release_date))) %>% 
+  select(c("popularity", "YearWeek"))
+
+data_ts_albums <- left_join(data_ts_albums, month, by = "popularity")
+
+ggplot(data_ts_albums, aes(x = YearWeek, y = valence)) +
+  geom_point(aes(col = tag)) +
+  ylab("Joyfulness") + 
+  xlab("Date") +
+  geom_smooth(method = "loess", col = "black") +
+  geom_smooth(method = "lm", col = "red", se = F)+
+  geom_line(color = "gray")
+
+
+```
+
+## Are songs actually becoming less vocal-heavy over time?
+
+```{r}
+ggplot(data_ts, aes(x = YearMonth, y = instrumentalness)) +
+  geom_point(aes(col = tag)) +
+  ylab("Instrumentalness") + 
+  xlab("Date") +
+  geom_smooth(method = "loess", col = "black") +
+  geom_smooth(method = "lm", se = F, col = "darkred")
+
+
+```
+
+## Are albums becoming less vocal-heavy over time?
+
+```{r}
+
+ggplot(data_ts_albums, aes(x = YearWeek, y = instrumentalness)) +
+  geom_point(aes(col = tag)) +
+  ylab("Instrumentalness") + 
+  xlab("Date") +
+  geom_smooth(method = "loess", col = "black") +
+  geom_smooth(method = "lm", col = "red", se = F)
+
+
+```
+
+
+Black line is an LOESS line and the dark red is just an Linear model to show the general trend. 
+
+
+# Hierarchical Clustering of Genres
+
+```{r, fig.height = 16, fig.width = 13}
+library(ggdendro)
+# more wrangling to get only the most valudable data for clustering 
+useless_features <- c("track_number", "available_markets", "id...12", "release_date", "genres", "tag_freq", "time_signature", "key")
+
+
+dendro_top <- full_dataset %>% 
+  select(-c(useless_features)) %>%
+  bind_cols(full_dataset %>% select(album.name)) %>%
+  filter(!grepl('Deluxe', album.name)) %>% 
+  group_by(album.name, tag) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE) %>% 
+  ungroup() %>%
+  column_to_rownames("album.name") %>%
+  as.data.frame()
+# 
+music_clust <- as.dendrogram(hclust(dist(dendro_top), method = "complete")) %>% 
+  color_branches(k = 12) %>% 
+  color_labels(k = 12)
+
+
+# ggdendrogram(music_clust,  rotate= TRUE)
+
+ggplot(music_clust, horiz = TRUE) + 
+  ggtitle("Hierarchical Clustering of the Top 35 albums") %>% view()
+
+
+```
+
+```{r, fig.height = 10, fig.width = 10}
+
+circlize_dendrogram(music_clust, labels_track_height = 0.3, dend_track_height = 0.3)
+```
+
+```{r}
+beepr::beep("treasure")
+```
+
+```{r}
+
+```
+

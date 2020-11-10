@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1605019055236.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "D5135EA4",
+    "lastKnownWriteTime" : 9026712615111769445,
+    "last_content_update" : 1605019055236,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "9862E597",
+        "caption" : "billboard",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=billboard&cache_key=9862E597",
+        "displayedObservations" : 100,
+        "environment" : "",
+        "expression" : "billboard",
+        "object" : "billboard",
+        "preview" : 0,
+        "totalObservations" : 100,
+        "variables" : 6
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

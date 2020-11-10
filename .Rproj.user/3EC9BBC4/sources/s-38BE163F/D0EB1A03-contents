@@ -1,0 +1,24 @@
+---
+title: "The Past Decade in Music"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+```
+
+
+```{r Importing Data, warning=FALSE, message=FALSE}
+billboard <- read_csv("data/spotify_full_100_10s.csv")
+```
+
+```{r Viewing the data}
+
+```
+
+
+

@@ -1,0 +1,181 @@
+---
+title: "Homework Assignment 4"
+subtitle: "Clustering and Outlier Detection"
+author: "Angel Sarmiento - asarmiento@floridapoly.edu"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+
+Run the code below to lad the `tidyverse` package for data transformation and visualization, the `dbscan` package for clustering and outlier detection, and the `factoextra` package for quick visualizations of models (you are not required to use `factoextra` and can choose to use other methods for creating visualizations that explain your results when requested)
+
+```{r, message = FALSE, warning=FALSE}
+library(tidyverse)
+library(dbscan)
+library(factoextra)
+```
+
+
+# Problem 1 
+
+Read the dataset on corporate data for 22 public utilities in the United States.
+
+```{r, message=FALSE}
+utilities <- read_csv("https://github.com/reisanar/datasets/raw/master/Utilities.csv")
+```
+
+Sample entries:
+
+```{r}
+head(utilities)
+```
+
+
+ Variables    |  Description
+------------  |----------------------------------------------------------------
+`Company`        | Company name
+`Fixed_charge` | Fixed-charge coverage ratio (income/debt)
+`RoR    `  | Percent rate of return on capital
+`Cost    `      | Cost per KW capacity in place
+`Load_factor    `        | Annual load factor
+`Demand_growth    `| Percent demand growth
+`Sales    `  | Sales (KWH use per year)
+`Nuclear    `      | Nuclear    			Percent nuclear
+`Fuel_Cost`        | Fuel_Cost			Total fuel costs (cents per KWH)
+
+(a) Considering the numerical attributes available, give an example where clustering analysis using this dataset would be useful for decision making or validation.
+
+(b) Create any data summary of the different attributes (or a subset of them). 
+
+(c) Use hierarchical clustering using the numerical attributes (you can for example use single linkage here, i.e. `method = "single"` when using the `hclust()` function). Use the results from part (b) to decide if any pre-processing or data transformation is appropriate. Comment on your clustering results (for example, are there specific attributes that characterize the different groups)
+
+(d) Create a dendrogram representing the clustering found in part (c). Comment on your results.
+
+
+
+## Solutions
+
+Comments here
+
+```{r}
+# code here - insert as many chunks of code as needed
+```
+
+More comments here
+
+
+
+# Problem 2 
+
+
+Read the dataset:
+
+```{r, message=FALSE}
+spiral <- read_csv("https://github.com/reisanar/datasets/raw/master/spiral.csv")
+# select only the first two columns
+my_spiral <- select(spiral, 1:2)
+```
+
+Below is a plot of the dataset:
+
+```{r}
+ggplot(data = my_spiral) + 
+  geom_point(aes(x = X, y = Y))
+```
+
+(a) Use any clustering method discussed in class to find 3 groups for this dataset. 
+
+(b) Comment on your results from part (a)
+
+(b) Visualize the dataset again including the cluster assignments.
+
+
+## Solutions
+
+Comments here
+
+```{r}
+# code here - insert as many chunks of code as needed
+```
+
+More comments here
+
+
+
+
+# Problem 3
+
+Search for one research article where "outlier detection" (or "anomaly detection") has been used in a field/application of you interest. Share the name of the paper, a short description of the main results (check the abstract and conclusions of the paper), and a direct link to the work.
+
+You could use the university's library for this, or simply use [Google Scholar](https://scholar.google.com/scholar?hl=en&q=%22outlier+detection%22) for a list of the many papers that have used related techniques in recent years.
+
+
+
+## Solutions 
+
+
+Comments here.
+
+
+# Problem 4 (required for students in CAP 5771. +12 points for students in CAP 4770)
+
+
+One can use a **correlation-based distance** and **Euclidean distance** as **dissimilarity measures for hierarchical clustering**.  These two measures are almost equivalent: if each observation has been centered to have mean zero and standard deviation one, and if $r_{ij}$ denotes the correlation between the $i$th and $j$th observations, then the quantity $1 − r_{ij}$ is **proportional to the squared Euclidean distance** between the $i$th and $j$th observations.
+
+
+Use the (built-in) `USArrests` dataset (violent crime rates by US state) to show that this proportionality holds.
+
+(Recall: the Euclidean distance can be calculated using the `dist()` function, and correlations can be calculated using the `cor()` function).
+
+
+
+
+
+# Problem 5 (required for students in CAP 5771. +12 points for students in CAP 4770)
+
+
+For this problem you will use 6830 [gene expression](https://www.genome.gov/genetics-glossary/Gene-Expression) measurements on 64 [cancer lines](https://www.cancer.gov/publications/dictionaries/cancer-terms/def/cancer-cell-line).
+
+
+Read the dataset:
+
+```{r, message=FALSE}
+gene_data <- read_csv("https://github.com/reisanar/datasets/raw/master/gene_data.csv")
+```
+
+
+Each cell line is labeled with a cancer type (column 1). We could use that label later to see the extent to which these cancer types agree with the results of clustering analysis. 
+
+You can check the cancer types for the cell lines using the `table()` function:
+
+```{r}
+table(gene_data$cancer)
+```
+
+
+The goal is to find out whether or not the observations cluster into distinct types of cancer. We standardize the variables to have mean zero and standard deviation one (this step is optional and should be performed only if we want each gene to be on the same scale)
+
+```{r}
+gene_sd <- scale(gene_data[ , -1])
+```
+
+
+(a) Perform hierarchical clustering using complete, average, and single linkage (use the `gene_sd` version).
+
+(b) Plot the dendrograms for each of the hierarchical clustering results in part (a)
+
+(c) Comment on your results from part (b)
+
+(d) Choose one of the hierarchical clustering dendrograms, and cut it at a height that generates 4 groups. Comment on your results.
+
+
+## Solutions
+
+Comments here
+
+```{r}
+# code here - insert as many chunks of code as needed
+```
+
+More comments here
