@@ -3,6 +3,10 @@
 # The Past Decade of Music: https://github.com/angel-sarmiento/the_past_decade_in_music
 # PostgreSQL Database
 
+#Authentication Script
+#NOT PRESENT IN PROJECT FOLDER FOR SECURITY REASONS
+#source("../API_KEY/spotify_authentication.R")
+
 # loading libraries
 
 # Tidy data wrangling
