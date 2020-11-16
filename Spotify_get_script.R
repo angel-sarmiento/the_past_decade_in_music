@@ -5,33 +5,31 @@
 
 #Authentication Script
 #NOT PRESENT IN PROJECT FOLDER FOR SECURITY REASONS
-#source("../API_KEY/spotify_authentication.R")
+source("../API_KEY/spotify_authentication.R")
+
+
+# Libraries ---------------------------------------------------------------
+
 
 # loading libraries
+library(spotifyr)
 
 # Tidy data wrangling
 library(tidyverse)
-library(purrr)
-
-#machine learning and plotting
-library(caret)
-library(dendextend)
 
 #time series
 library(lubridate)
 library(tsibble)
 
 #tag dataset
+# remotes::install_github("ppatrzyk/lastfmR")
 library(lastfmR)
 
-#Pretty stuff
-library(circlize)
-library(wesanderson)
-pal <- wes_palette("Moonrise3", 31, type = "continuous")
-# library(highcharter)
-# library(scales)
 # Setting the seed for reproducability 
 set.seed(5543)
+
+
+# Playlist Import ---------------------------------------------------------
 
 
 
@@ -45,6 +43,9 @@ play_tracks_df <- get_playlist_tracks(playlist_id = playlist_id)
 #getting the list of the best album names for pulling info
 album_names <- as.vector(play_tracks_df$track.album.name)
 album_ids <- as.vector(play_tracks_df$track.album.id)
+
+
+# Wrangling the Data ------------------------------------------------------
 
 
 # Wrangling
@@ -103,17 +104,25 @@ full_dataset <- inner_join(full_df, albums, by = c("artist.name", "track.name"))
 
 
 
+# Getting Tags from LastFM ------------------------------------------------
+
+
 
 # tags <- map_df(as.vector(full_dataset$artist.name), get_tags); beepr::beep("coin")
 # 
-# write_csv(tags, "tags.csv")
-tags <- read_csv("tags.csv")
+# write_csv(tags, "data/tags.csv")
+tags <- read_csv("data/tags.csv")
 
 
 
 #Getting appropriate tags
 tags <- tags %>% 
   filter(tag_freq == 100)
+
+
+# Joining Dataframes ------------------------------------------------------
+
+
 
 #renaming the artist name column for a join
 colnames(tags)[1] <- "artist.name"
@@ -122,12 +131,29 @@ colnames(tags)[1] <- "artist.name"
 full_dataset <- left_join(full_dataset, tags, by = "artist.name")
 full_dataset <- full_dataset[!duplicated(full_dataset["track.name"]),]
 
+
+# Collecting and Exporting ------------------------------------------------
+
 #Lets unnest the countries and rename the resulting column
 final_dataset <- full_dataset %>% 
   mutate(available_markets = map(available_markets, as_tibble)) %>% 
   unnest(cols = c(available_markets)) %>% 
   rename(country = value) %>% 
-  select(-c(genres))
+  select(-c(genres, tag_freq)) %>% 
+  rename(id = id...12) %>% 
+  rename(artist_name = artist.name) %>% 
+  rename(track_name = track.name) %>% 
+  rename(album_name = album.name)
+
+#getting a csv without the countries column
+final_no_countries <- final_dataset %>% 
+  distinct(id, .keep_all = TRUE) %>% 
+  #have to fix the release_date column later with lubridate
+  select(-c(country, release_date))
 
 #writing this data to a csv for later use
-write_csv(final_dataset, "spotify_full_100_10s.csv")
+write_csv(final_dataset, "data/spotify_full_100_10s.csv")
+write_csv(final_no_countries, "data/spotify_100_no_geo.csv")
+beepr::beep("coin")
+
+

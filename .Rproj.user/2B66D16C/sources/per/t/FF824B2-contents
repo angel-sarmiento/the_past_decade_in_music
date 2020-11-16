@@ -1,5 +1,5 @@
 ---
-title: "Text Mining Analysis of the Billboard Top 100"
+title: "The Past Decade in Music"
 output: html_document
 ---
 
@@ -9,24 +9,22 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r Libraries, warning=FALSE, message=FALSE}
 library(tidyverse)
-library(tidytext)
+library(highcharter)
+library(factoextra)
+library(sf)
 ```
 
 
 ```{r Importing Data, warning=FALSE, message=FALSE}
-billboard <- read_csv("https://raw.github.com/reisanar/datasets/master/BB_top100_2015.csv")
+#data is just imported here. Script for preprocessing and other wrangling and imports from the Spotify API located in this folder under
+#Spotify_get_script.R
+billboard <- read_csv("data/spotify_full_100_10s.csv")
 ```
+
 
 ```{r Viewing the data}
-#Do not know what the "source column was meant for but it most likely not needed
-billboard <- billboard %>% select(c("Rank", "Song", "Artist", "Year", "Lyrics"))
-
-head(billboard)
+hchart(billboard)
 ```
 
-```{r Beginning of Text Mining}
-#getting a list of stopwords
 
-billboard %>% unnest_tokens(word, Lyrics, token = "words") 
-```
 
