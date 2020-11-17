@@ -1,0 +1,129 @@
+---
+title: |
+  | \hspace{5cm} The Past Decade in Music
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Introduction
+
+We are constantly consuming multiple genres and subgenres of music each day. Developing an understanding of this music is something widely underappreciated and accomplished, however, the programmers at spotify deem it a necessary feature that was to be integrated into their platform and business model. In doing this, they created an API open for developers to integrate their data into applications and analytics. Other companies like Genius and LastFM have created APIs as well to both bring lyrics and genre tags respectively into the developer's hands. 
+
+In this work is a preliminary investigation of the past decade of music taken from Billboard's Top 100 songs. Using the Spotify API, these songs, and their related albums have been pulled along with their track `features` that explain the mood, feeling, or characteristics of tracks. This is a fairly vast dataset of songs and song features that open up a lot of possibility for analysis. Some questions that could be asked are: How does music happiness change across the world? How does happiness relate to other key features in music? Can we form a model that shows this relationship? This and further exporations found at [this repo](https://github.com/angel-sarmiento/the_past_decade_in_music) will explore this and more. 
+
+
+# Libraries and Imports
+
+```{r Libraries, warning=FALSE, message=FALSE}
+#plotting and wrangling
+library(tidyverse)
+library(highcharter)
+library(factoextra)
+library(patchwork)
+library(sf)
+
+#ml/modeling
+library(caret)
+
+#working with time variables
+library(lubridate)
+
+#setting the seed for reproducability
+set.seed(543)
+```
+
+
+```{r Importing Data, warning=FALSE, message=FALSE}
+#data is just imported here. Script for preprocessing and other wrangling and 
+#imports from the Spotify API located in this folder under
+#Spotify_get_script.R
+billboard <- read_csv("../data/spotify_full_100_10s.csv") 
+```
+
+# Viewing the Data, 
+
+### What is the relationship between `energy` and `valence` from the last decade? 
+
+```{r Viewing the data}
+billboard %>% 
+  distinct(id, .keep_all = TRUE) %>% 
+  group_by(album_name) %>%
+  hchart(type = "scatter", hcaes(energy, valence, group = album_name)) %>% 
+  hc_legend(verticalAlign = "left", layout = "horizontal", x = 30, y = 15, fontSize = "10px") %>% 
+  hc_title(text = "Happiness vs. Energeticness of the Top 50 Albums", align = "center")
+```
+
+### How happy was music around the globe? 
+
+```{r Spatial Visualization, message=FALSE, warning=FALSE}
+#Getting the country codes
+countries <- read_csv("../data/country_codes.csv")
+
+
+#Converting to a shape Object
+new_data <- billboard %>% 
+  left_join(y = countries, by = "country") %>% 
+  group_by(album_name, country) %>% 
+  summarise_if(is.numeric, mean) %>% 
+  ungroup() %>% 
+  st_as_sf(coords = c("Latitude", "Longitude"))
+
+#Plotting countries in the world
+hcmap(map = "custom/world-robinson-lowres",
+      data = new_data,
+      name = "Happiness of Music (Valence)",
+      value = "valence",
+      borderWidth = 0,
+      nullColor = "#d3d3d3") %>%
+  hc_colorAxis(
+    stops = color_stops(colors = viridisLite::magma(10, begin = 0.1)),
+    type = "logarithmic"
+    ) %>% 
+  hc_title(text = "Happiness of the Billboard Top 100 Albums Available Around the World")
+```
+
+### What is the relationship between happiness and the other variables? 
+
+From the Spotify Dataset, there are a few parameters that are computed as functions of other parameters found in the data. These parameters are energy, loudness, and acousticness. For example, *loudness* is used in the calculations of *energy*. For this reason, these terms will be interaction terms in the regression model. 
+
+```{r GLM}
+#selecting all of the numeric attributes for a linear model
+model_ready <- billboard %>% 
+  distinct(id, .keep_all = TRUE) %>% 
+  select_if(is.numeric) 
+# Setting up cross validation
+ctrl <- trainControl(method = "cv", number = 10)
+
+# trying to model the relationship between happiness and the other variables
+lm_spotify <- train(valence ~ danceability + energy * loudness * acousticness + speechiness + 
+                     tempo + instrumentalness + liveness + key, data = model_ready,
+                    method = "lm",
+                    preProc = c("scale", "center"),
+                    trControl = ctrl)
+```
+
+```{r}
+summary(lm_spotify$finalModel)
+```
+
+Let's take a look at these plots.
+
+Lets see how the model fits the data
+
+```{r, fig.align="center"}
+#predicting the values of valence with the models
+predictions <- predict(lm_spotify, billboard)
+
+ggplot(billboard, aes(x = valence, y = predictions)) +
+  geom_point(color= "orange") +
+  geom_smooth(method = "lm") +
+  theme_minimal() +
+  labs(x = "Valence", y = "Predictions", title = "Predictions vs. Observations of Happiness in Music")
+```
+
+
+
