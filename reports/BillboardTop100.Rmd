@@ -2,7 +2,10 @@
 title:  "The Past Decade in Music"
 author: "Angel Sarmiento - asarmiento6426@floridapoly.edu"
 date: "November 18, 2020"
-output: html_document
+output: 
+  html_document:
+    keep_md: true
+  
 ---
 
 <style type="text/css">
