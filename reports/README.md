@@ -4,7 +4,7 @@
 
 
 
-
+**NOTE: Most images here are interactive, you can interact with them in the [original HTML file](https://github.com/angel-sarmiento/the_past_decade_in_music/blob/master/reports/BillboardTop100.html)
 
 ## Introduction
 
