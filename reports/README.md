@@ -10,7 +10,7 @@
 
 We are constantly consuming multiple genres and subgenres of music each day. Developing an understanding of this music is something widely underappreciated and accomplished, however, the programmers at spotify deem it a necessary feature that was to be integrated into their platform and business model. In doing this, they created an API open for developers to integrate their data into applications and analytics. Other companies like Genius and LastFM have created APIs as well to both bring lyrics and genre tags respectively into the developer's hands. 
 
-|    In this work, a preliminary investigation of the past decade of music taken from Billboard's Top 100 songs is done. Using the Spotify API, these songs, and their related albums have been pulled along with their track `features` that explain the mood, feeling, or characteristics of tracks. This is a fairly vast dataset of songs and song features that open up a lot of possibility for analysis. Some questions that could be asked are: How does music happiness change across the world? How does happiness relate to other key features in music? Can we form a model that shows this relationship? This and further exporations found at [this repo](https://github.com/angel-sarmiento/the_past_decade_in_music) will explore this and more. 
+In this work, a preliminary investigation of the past decade of music taken from Billboard's Top 100 songs is done. Using the Spotify API, these songs, and their related albums have been pulled along with their track `features` that explain the mood, feeling, or characteristics of tracks. This is a fairly vast dataset of songs and song features that open up a lot of possibility for analysis. Some questions that could be asked are: How does music happiness change across the world? How does happiness relate to other key features in music? Can we form a model that shows this relationship? This and further exporations found at [this repo](https://github.com/angel-sarmiento/the_past_decade_in_music) will explore this and more. 
 
 
 ## Libraries and Imports
@@ -67,7 +67,7 @@ billboard %>%
   hc_title(text = "Happiness vs. Energeticness of the Top 100 Albums", align = "center")
 ```
 
-|    From this graph it looks as though these two variables are in fact positively correlated. Some of the outliers show that it is possible to be a very happy song without being very energetic. This makes sense in contexts like songs that have really positive lyrics but are not generally so upbeat and happy. Hovering over **Whack World** in the album list shows one outlier, which happens to fall on an album that generally follows the trend stated before. 
+From this graph it looks as though these two variables are in fact positively correlated. Some of the outliers show that it is possible to be a very happy song without being very energetic. This makes sense in contexts like songs that have really positive lyrics but are not generally so upbeat and happy. Hovering over **Whack World** in the album list shows one outlier, which happens to fall on an album that generally follows the trend stated before. 
 
 ### How happy was music around the globe? 
 
@@ -108,7 +108,7 @@ What might be more fruitful to look at is how these values change within contine
 
 There are a few parameters in the Spotify API that are computed as functions of other parameters found in the data. These parameters are `energy`, `loudness`, and `acousticness`. For example, `loudness` is used in the calculations of `energy`. For this reason, these terms will be modeled as interaction terms in the regression model. The plots demonstrating these relationships are omitted here for this reason as well. The documentation expounding on these parameters is found [here](https://developer.spotify.com/documentation/web-api/reference/tracks/get-audio-features/).
 
-|    For a GLM, k-folds cross-validation is done without any standardization of the parameters. The interaction terms are included. The objective of this model is developing an understanding of how these other parameters perform as predictors for `valence`, as well as how well they can be used for an inferential model.
+For a GLM, k-folds cross-validation is done without any standardization of the parameters. The interaction terms are included. The objective of this model is developing an understanding of how these other parameters perform as predictors for `valence`, as well as how well they can be used for an inferential model.
 
 ```{r GLM}
 #selecting all of the numeric attributes for a linear model
@@ -132,7 +132,7 @@ summary(lm_spotify$finalModel)
 
 |    From the model, it can be seen that `Danceability`, `energy`, `speechiness`, the intercept, and `acousticness` to a lesser extent are significant predictors of valence. Even with the interaction terms, `energy` is incredibly with a p-value of 2e-16. Unfortunately, the parameters listed only explain about 34% of the variance in `valence`. This is due to some missing information and imperfect modeling for the individual parameters. From this, the coefficients seem to lead in the direction described above in regards to `energy` and `valence`. That is, if there were an increase of energy from one song to another, then there should be an expected increase of about 0.65% in valence. 
 
-|     Extracting these coefficients should help describe the relationship between valence and these variables. Plotting the model below shows how close this is to modeling what is actually happening.  
+Extracting these coefficients should help describe the relationship between valence and these variables. Plotting the model below shows how close this is to modeling what is actually happening.  
 
 
 ```{r Getting GLM coefficients}
