@@ -4,7 +4,7 @@
 
 
 
-**NOTE: Most images here are interactive, you can interact with them in the [original HTML file](https://github.com/angel-sarmiento/the_past_decade_in_music/blob/master/reports/BillboardTop100.html)
+**NOTE**: Most images here are interactive, you can interact with them in the [original HTML file](https://github.com/angel-sarmiento/the_past_decade_in_music/blob/master/reports/BillboardTop100.html)
 
 ## Introduction
 
@@ -67,6 +67,9 @@ billboard %>%
   hc_title(text = "Happiness vs. Energeticness of the Top 100 Albums", align = "center")
 ```
 
+![](https://github.com/angel-sarmiento/the_past_decade_in_music/blob/master/reports/images/point_viz.png)
+
+
 From this graph it looks as though these two variables are in fact positively correlated. Some of the outliers show that it is possible to be a very happy song without being very energetic. This makes sense in contexts like songs that have really positive lyrics but are not generally so upbeat and happy. Hovering over **Whack World** in the album list shows one outlier, which happens to fall on an album that generally follows the trend stated before. 
 
 ### How happy was music around the globe? 
@@ -99,6 +102,8 @@ hcmap(map = "custom/world-robinson-lowres",
     ) %>% 
   hc_title(text = "Happiness of the Billboard Top 100 Albums Available Around the World")
 ```
+![](https://github.com/angel-sarmiento/the_past_decade_in_music/blob/master/reports/images/spatial-viz.png)
+
 
 According to the data, of the top 100 songs/albums from the billboard top 100 of decade that are available in these countries, the african countries score the highest in happiness. Now keep in mind that this is based on *availability* not necessarily based on these country's own best music of the decade. It stands to reason that some music might not be available in all of these countries and this may skew these results. 
 
@@ -129,8 +134,10 @@ lm_spotify <- train(valence ~ danceability + energy * loudness * acousticness + 
 ```{r}
 summary(lm_spotify$finalModel)
 ```
+![](https://github.com/angel-sarmiento/the_past_decade_in_music/blob/master/reports/images/reg-output.png)
 
-|    From the model, it can be seen that `Danceability`, `energy`, `speechiness`, the intercept, and `acousticness` to a lesser extent are significant predictors of valence. Even with the interaction terms, `energy` is incredibly with a p-value of 2e-16. Unfortunately, the parameters listed only explain about 34% of the variance in `valence`. This is due to some missing information and imperfect modeling for the individual parameters. From this, the coefficients seem to lead in the direction described above in regards to `energy` and `valence`. That is, if there were an increase of energy from one song to another, then there should be an expected increase of about 0.65% in valence. 
+
+From the model, it can be seen that `Danceability`, `energy`, `speechiness`, the intercept, and `acousticness` to a lesser extent are significant predictors of valence. Even with the interaction terms, `energy` is incredibly with a p-value of 2e-16. Unfortunately, the parameters listed only explain about 34% of the variance in `valence`. This is due to some missing information and imperfect modeling for the individual parameters. From this, the coefficients seem to lead in the direction described above in regards to `energy` and `valence`. That is, if there were an increase of energy from one song to another, then there should be an expected increase of about 0.65% in valence. 
 
 Extracting these coefficients should help describe the relationship between valence and these variables. Plotting the model below shows how close this is to modeling what is actually happening.  
 
@@ -151,6 +158,8 @@ ggplot(billboard, aes(x = valence, y = predictions)) +
   theme_minimal() +
   labs(x = "Valence", y = "Predictions", title = "Predictions vs. Observations of Happiness in Music")
 ```
+![](https://github.com/angel-sarmiento/the_past_decade_in_music/blob/master/reports/images/plot-predictions.png)
+
 
 ### Results/Conclusion
 
