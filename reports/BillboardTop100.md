@@ -5,6 +5,8 @@ date: "November 18, 2020"
 output: 
   html_document:
     keep_md: true
+    toc: true
+    toc_float: true
   
 ---
 
@@ -66,7 +68,7 @@ set.seed(543)
 
 
 
-## Viewing the Data, 
+## Viewing the Data
 
 ### What is the relationship between `energy` and `valence` from the last decade? 
 
