@@ -1,6 +1,6 @@
 # the_past_decade_in_music
 
-# Report 1: Visualizing Happiness
+# Part 1: Visualizing Happiness
 
 **FULL REPORT** [HERE](https://github.com/angel-sarmiento/the_past_decade_in_music/tree/master/reports)
 
